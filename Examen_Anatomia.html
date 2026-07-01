@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Examen de Repaso – Anatomía II</title>
+<style>
+  :root{
+    --bg:#0f1720; --panel:#182533; --panel2:#1f2f40;
+    --text:#eaf2f8; --muted:#9fb3c8; --accent:#3fa9f5;
+    --good:#33c37e; --bad:#e5554f; --warn:#f5b942;
+    --border:#2b3d4f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Segoe UI', Tahoma, Arial, sans-serif;
+    background:linear-gradient(180deg,#0b131b,#0f1720 400px);
+    color:var(--text); min-height:100vh;
+  }
+  .wrap{max-width:900px; margin:0 auto; padding:24px 16px 60px;}
+  header{text-align:center; margin-bottom:20px;}
+  header h1{margin:0 0 6px; font-size:1.7rem;}
+  header p{margin:0; color:var(--muted); font-size:.95rem;}
+  .badge-pass{display:inline-block; margin-top:8px; background:var(--panel2); border:1px solid var(--border); padding:4px 12px; border-radius:20px; font-size:.85rem; color:var(--warn);}
+
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:18px; box-shadow:0 4px 18px rgba(0,0,0,.25);}
+
+  /* Setup screen */
+  #setup .temas{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0;}
+  .tema-chip{background:var(--panel2); border:1px solid var(--border); border-radius:20px; padding:6px 12px; font-size:.85rem; cursor:pointer; user-select:none; transition:.15s;}
+  .tema-chip.active{background:var(--accent); color:#08131c; border-color:var(--accent); font-weight:600;}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0;}
+  select, input[type=number]{background:var(--panel2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 10px;}
+  .btn{background:var(--accent); color:#08131c; border:none; border-radius:10px; padding:12px 20px; font-size:1rem; font-weight:700; cursor:pointer; transition:.15s;}
+  .btn:hover{filter:brightness(1.1);}
+  .btn.secondary{background:var(--panel2); color:var(--text); border:1px solid var(--border); font-weight:500;}
+  .btn.small{padding:8px 14px; font-size:.85rem;}
+  .link-btn{background:none;border:none;color:var(--accent);cursor:pointer;text-decoration:underline;font-size:.85rem;padding:0;}
+
+  /* Quiz screen */
+  #quizScreen{display:none;}
+  .progress-outer{background:var(--panel2); border-radius:8px; height:10px; overflow:hidden; margin-bottom:10px;}
+  .progress-inner{background:var(--accent); height:100%; width:0%; transition:width .25s;}
+  .topbar{display:flex; justify-content:space-between; align-items:center; color:var(--muted); font-size:.85rem; margin-bottom:6px;}
+  .tema-tag{display:inline-block; background:var(--panel2); border:1px solid var(--border); color:var(--warn); font-size:.75rem; padding:3px 10px; border-radius:12px; margin-bottom:10px;}
+  .pregunta-txt{font-size:1.15rem; line-height:1.5; margin:6px 0 18px;}
+  .opciones{display:flex; flex-direction:column; gap:10px;}
+  .opcion{background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:13px 16px; cursor:pointer; font-size:1rem; transition:.15s; text-align:left;}
+  .opcion:hover{border-color:var(--accent);}
+  .opcion.correct{background:rgba(51,195,126,.18); border-color:var(--good); color:#c9ffe4;}
+  .opcion.incorrect{background:rgba(229,85,79,.18); border-color:var(--bad); color:#ffd8d6;}
+  .opcion.disabled{cursor:default;}
+  .opcion .icon{float:right; font-weight:700;}
+  .explicacion{margin-top:16px; background:#101c27; border-left:4px solid var(--accent); border-radius:6px; padding:12px 14px; font-size:.92rem; color:var(--muted); display:none;}
+  .explicacion.show{display:block;}
+  .quiz-footer{display:flex; justify-content:space-between; align-items:center; margin-top:20px;}
+  .score-live{color:var(--muted); font-size:.9rem;}
+
+  /* Results screen */
+  #resultsScreen{display:none;}
+  .score-circle{width:150px;height:150px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 16px;border:8px solid var(--panel2);}
+  .score-circle.pass{border-color:var(--good);}
+  .score-circle.fail{border-color:var(--bad);}
+  .score-circle .num{font-size:2.2rem;font-weight:800;}
+  .score-circle .den{color:var(--muted);font-size:.9rem;}
+  .verdict{text-align:center;font-size:1.2rem;font-weight:700;margin-bottom:4px;}
+  .verdict.pass{color:var(--good);}
+  .verdict.fail{color:var(--bad);}
+  .review-item{border-bottom:1px solid var(--border); padding:14px 0;}
+  .review-item:last-child{border-bottom:none;}
+  .review-item .q{font-weight:600; margin-bottom:8px;}
+  .review-item .a-user{color:var(--bad); font-size:.9rem;}
+  .review-item .a-correct{color:var(--good); font-size:.9rem;}
+  .review-item .a-ok{color:var(--good); font-size:.9rem;}
+  .review-item .exp{color:var(--muted); font-size:.88rem; margin-top:6px;}
+  .tema-breakdown{display:grid; grid-template-columns:1fr auto; gap:6px 14px; font-size:.88rem; margin-top:6px;}
+  .tema-breakdown .bar-bg{background:var(--panel2); border-radius:6px; height:8px; overflow:hidden; margin-top:3px;}
+  .tema-breakdown .bar-fill{background:var(--accent); height:100%;}
+  footer.note{text-align:center; color:var(--muted); font-size:.78rem; margin-top:30px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🩺 Examen de Repaso – Anatomía</h1>
+    <p>80 preguntas de opción múltiple basadas en tus apuntes (histología, anatomía y embriología)</p>
+    <span class="badge-pass">Necesitas 80% (equivalente a 8/10) para aprobar</span>
+  </header>
+
+  <!-- SETUP -->
+  <div class="card" id="setup">
+    <h3 style="margin-top:0;">Configura tu sesión de estudio</h3>
+    <p style="color:var(--muted); font-size:.9rem;">Selecciona los temas que quieres repasar (por defecto están todos). Puedes hacer el examen completo o practicar por tema.</p>
+    <div class="temas" id="temaChips"></div>
+    <div class="row">
+      <button class="link-btn" onclick="selectAllTemas(true)">Seleccionar todos</button>
+      <span style="color:var(--muted)">·</span>
+      <button class="link-btn" onclick="selectAllTemas(false)">Ninguno</button>
+    </div>
+    <div class="row">
+      <label style="font-size:.9rem;color:var(--muted);">Modo:</label>
+      <select id="modo">
+        <option value="estudio">Estudio (ver respuesta al instante)</option>
+        <option value="examen">Examen (ver resultados al final)</option>
+      </select>
+      <label style="font-size:.9rem;color:var(--muted);">Orden:</label>
+      <select id="orden">
+        <option value="aleatorio">Aleatorio</option>
+        <option value="tema">Agrupado por tema</option>
+      </select>
+    </div>
+    <div class="row">
+      <button class="btn" onclick="startQuiz()">Comenzar</button>
+      <span id="countInfo" style="color:var(--muted); font-size:.85rem;"></span>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quizScreen">
+    <div class="topbar">
+      <span id="qCounter">Pregunta 1 / 65</span>
+      <span class="score-live" id="scoreLive">Aciertos: 0</span>
+    </div>
+    <div class="progress-outer"><div class="progress-inner" id="progressBar"></div></div>
+    <div class="card">
+      <span class="tema-tag" id="temaTag"></span>
+      <div class="pregunta-txt" id="preguntaTxt"></div>
+      <div class="opciones" id="opciones"></div>
+      <div class="explicacion" id="explicacion"></div>
+      <div class="quiz-footer">
+        <button class="btn secondary small" onclick="quitQuiz()">Salir</button>
+        <button class="btn" id="nextBtn" onclick="nextQuestion()" disabled>Siguiente →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="resultsScreen">
+    <div class="card">
+      <div class="score-circle" id="scoreCircle">
+        <div class="num" id="scorePct">0%</div>
+        <div class="den" id="scoreFrac">0/0</div>
+      </div>
+      <div class="verdict" id="verdictTxt"></div>
+      <p style="text-align:center; color:var(--muted);" id="gradeTxt"></p>
+      <h4>Desempeño por tema</h4>
+      <div class="tema-breakdown" id="temaBreakdown"></div>
+      <div class="row" style="justify-content:center; margin-top:18px;">
+        <button class="btn" onclick="restartSame()">Repetir estas preguntas</button>
+        <button class="btn secondary" onclick="reviewFailedOnly()">Repasar solo falladas</button>
+        <button class="btn secondary" onclick="goToSetup()">Volver al inicio</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">Revisión completa</h3>
+      <div id="reviewList"></div>
+    </div>
+  </div>
+
+  <footer class="note">Material generado a partir de tus 24 PDFs de clase. Úsalo como repaso; verifica los puntos clave con tus apuntes originales antes del examen.</footer>
+</div>
+
+<script>
+const QUESTIONS = [
+// ---------- REPRODUCTOR FEMENINO ----------
+{tema:"Reproductor Femenino", p:"Durante el estudio histológico del ovario, se identifica una capa de tejido conectivo denso localizada inmediatamente por debajo del epitelio superficial. Esta estructura constituye:", o:["El estroma cortical","La médula ovárica","La túnica albugínea","El hilio ovárico"], c:2, e:"La túnica albugínea es la cápsula de tejido conectivo denso justo bajo el epitelio germinal superficial del ovario."},
+{tema:"Reproductor Femenino", p:"Al nacimiento, los ovocitos primarios se encuentran detenidos en una etapa específica de la primera división meiótica. ¿Cuál es dicha etapa?", o:["Leptoteno","Cigoteno","Diploteno","Diacinesis"], c:2, e:"Los ovocitos primarios permanecen en diploteno de la profase I hasta poco antes de la ovulación."},
+{tema:"Reproductor Femenino", p:"En una preparación histológica se observa un ovocito rodeado por una única capa de células foliculares planas simples. Esta descripción corresponde a:", o:["Folículo primario unilaminar","Folículo secundario","Folículo primordial","Folículo de Graaf"], c:2, e:"El folículo primordial tiene una sola capa de células foliculares planas alrededor del ovocito."},
+{tema:"Reproductor Femenino", p:"Con relación a la reserva ovárica humana, ¿cuál de las siguientes afirmaciones es correcta?", o:["Después del nacimiento continúan formándose nuevos ovocitos primarios","Todos los ovocitos primarios presentes al nacer alcanzarán la ovulación","La mayoría de los folículos primordiales sufren atresia durante la vida","Los ovocitos primarios completan la meiosis I antes de la pubertad"], c:2, e:"Solo una fracción mínima de folículos ovula; la inmensa mayoría sufre atresia a lo largo de la vida."},
+{tema:"Reproductor Femenino", p:"¿Cuál es la capa más externa de la pared del útero?", o:["Endometrio","Miometrio","Perimetrio","Mesovario"], c:2, e:"De adentro hacia afuera: endometrio (mucosa), miometrio (muscular) y perimetrio (serosa externa)."},
+{tema:"Reproductor Femenino", p:"Durante la fase de lactación activa en la glándula mamaria, ¿cómo se libera el componente lipídico (graso) de la leche hacia la luz alveolar?", o:["Secreción apocrina","Secreción merocrina","Secreción holocrina","Difusión simple a través de la membrana basal"], c:0, e:"La grasa se libera envuelta en una porción de membrana/citoplasma apical (apocrina); las proteínas se liberan por vía merocrina."},
+{tema:"Reproductor Femenino", p:"¿Cuál de las siguientes opciones presenta el orden correcto de las cuatro partes de la trompa uterina, desde el ovario hasta el útero?", o:["Infundíbulo → Ampolla → Istmo → Porción uterina (intramural)","Ampolla → Infundíbulo → Porción uterina → Istmo","Istmo → Ampolla → Infundíbulo → Porción uterina","Porción uterina → Istmo → Infundíbulo → Ampolla"], c:0, e:"El infundíbulo (con fimbrias) capta el óvulo, sigue la ampolla (sitio de fecundación), luego el istmo y finalmente la porción intramural que atraviesa la pared uterina."},
+{tema:"Reproductor Femenino", p:"¿Cuál de las siguientes estructuras del folículo primario avanzado es la principal responsable de producir estrógenos?", o:["Teca interna","Teca externa","Zona pelúcida","Corona radiada"], c:0, e:"La teca interna, vascularizada y con células productoras de andrógenos aromatizables, es la fuente principal de estrógenos foliculares."},
+
+// ---------- REPRODUCTOR MASCULINO ----------
+{tema:"Reproductor Masculino", p:"¿Qué célula testicular produce la hormona antimülleriana (MIF/AMH), causante de la regresión de los conductos paramesonéfricos (de Müller) en el embrión masculino?", o:["Células de Sertoli","Células de Leydig","Células mioides","Espermatogonias"], c:0, e:"Las células de Sertoli secretan AMH/MIF; las de Leydig producen testosterona (responsable del desarrollo de los conductos de Wolff)."},
+{tema:"Reproductor Masculino", p:"¿Cómo está organizada la próstata en cuanto a sus lóbulos glandulares?", o:["2 lóbulos laterales y 1 lóbulo medio (central), unidos por el istmo prostático","4 lóbulos independientes sin conexión entre sí","Un único lóbulo cónico rodeando la uretra","3 lóbulos laterales y 2 mediales"], c:0, e:"La próstata tiene 2 lóbulos laterales + 1 medio, unidos por el istmo prostático (tejido fibromuscular anterior)."},
+{tema:"Reproductor Masculino", p:"La barrera hematotesticular, que protege a las células germinales en desarrollo, está formada por uniones ocluyentes entre:", o:["Células de Leydig adyacentes","Células de Sertoli adyacentes","Células mioides y de Leydig","Espermatogonias tipo A y B"], c:1, e:"Las uniones ocluyentes entre células de Sertoli forman la barrera hematotesticular, aislando el compartimento adluminal."},
+{tema:"Reproductor Masculino", p:"Al completar la meiosis I y II, un espermatocito primario da origen a:", o:["2 espermátides","4 espermátides","1 espermatozoide maduro","2 espermatocitos secundarios únicamente"], c:1, e:"Meiosis I genera 2 espermatocitos secundarios; cada uno completa meiosis II generando 2 espermátides, total 4 por cada espermatocito primario."},
+{tema:"Reproductor Masculino", p:"Según la cronología clásica del descenso testicular, ¿en qué semana de gestación los testículos alcanzan el escroto?", o:["Semana 12","Semana 20","Semana 28","Semana 33"], c:3, e:"Los testículos llegan a la región inguinal a la semana 12, atraviesan el conducto inguinal a la semana 28, y alcanzan el escroto a la semana 33."},
+{tema:"Reproductor Masculino", p:"¿Cuál es la anomalía más frecuente del descenso testicular?", o:["Hidrocele","Criptorquidia","Hernia inguinal indirecta congénita","Quiste del cordón espermático"], c:1, e:"La criptorquidia (ausencia de descenso completo al escroto) es la anomalía del descenso testicular más frecuente."},
+
+// ---------- SISTEMA URINARIO ----------
+{tema:"Sistema Urinario", p:"En la mujer, ¿qué estructura vascular cruza por encima y por delante del uréter, un dato clave en cirugía ginecológica (histerectomía)?", o:["La arteria ovárica","La arteria uterina","La arteria vesical inferior","La arteria obturatriz"], c:1, e:"La arteria uterina cruza superior y anterior al uréter (\"agua bajo el puente\"), por lo que hay riesgo de lesionarlo al ligarla."},
+{tema:"Sistema Urinario", p:"¿Cuáles son las tres estrecheces fisiológicas del uréter?", o:["Unión con la pelvis renal, cruce con los vasos ilíacos, trayecto por la pared vesical","Unión con la vejiga, cruce con la aorta, unión con la uretra","Cruce con la arteria renal, cruce con la arteria ovárica, entrada al riñón","Unión pieloureteral, cruce con el psoas, salida de la pelvis menor"], c:0, e:"Son sitios frecuentes de impactación de cálculos ureterales."},
+{tema:"Sistema Urinario", p:"¿Con cuál de las siguientes estructuras se relaciona anteriormente el riñón IZQUIERDO?", o:["Hígado y colon ascendente","Estómago, páncreas y bazo","Segunda porción del duodeno","Vejiga urinaria"], c:1, e:"El riñón derecho se relaciona con hígado/duodeno/colon ascendente; el izquierdo con estómago, páncreas y bazo."},
+
+// ---------- SISTEMA LINFÁTICO / INMUNE ----------
+{tema:"Sistema Linfático", p:"¿Dónde se localiza el timo?", o:["Mediastino posterior, junto al esófago","Mediastino anterior/superior, retroesternal","Mediastino medio, junto al pericardio","Región retroperitoneal, junto a la aorta"], c:1, e:"El timo es un órgano linfoepitelial del mediastino anterosuperior, retroesternal."},
+{tema:"Sistema Linfático", p:"Los corpúsculos de Hassall, ubicados en la médula tímica, producen una sustancia clave para la formación de linfocitos T llamada:", o:["Interleucina-2 (IL-2)","TSLP (linfopoyetina de la estroma tímica)","Interferón gamma","Hormona antimülleriana"], c:1, e:"La TSLP producida por los corpúsculos de Hassall es importante en la formación/educación de linfocitos T."},
+{tema:"Sistema Linfático", p:"¿Qué porcentaje aproximado de los linfocitos circulantes corresponde a linfocitos T?", o:["~20-30%","~5-10%","~70%","~90%"], c:2, e:"Los linfocitos T representan ~70%; los B ~20-30%; las NK ~5-10%."},
+{tema:"Sistema Linfático", p:"¿Cuál de las siguientes es una característica de las células dendríticas foliculares de los ganglios linfáticos?", o:["Derivan de precursores mieloides y expresan MHC II","No derivan de células mieloides ni expresan MHC II, pero sí receptores para Fc y C3b/C3d","Son idénticas a las células de Langerhans de la piel","Se encuentran únicamente en la médula del ganglio"], c:1, e:"Las células dendríticas foliculares son de origen distinto al mieloide, no presentan antígeno vía MHC II, y retienen complejos inmunes vía receptores Fc/complemento en los folículos corticales."},
+{tema:"Sistema Linfático", p:"La deficiencia de linfocitos TH17 (productores de IL-17 e IL-22) se asocia clínicamente con:", o:["Síndrome de Klinefelter","Síndrome de JOB (infecciones micóticas y bacterianas recurrentes de piel)","Síndrome de Turner","Anemia perniciosa"], c:1, e:"El síndrome de JOB (hiper-IgE) se relaciona con deficiencia funcional de TH17."},
+
+// ---------- CORAZÓN ----------
+{tema:"Corazón", p:"El nodo sinoatrial (SA), marcapasos natural del corazón (~70 latidos/min), se localiza en:", o:["La unión de la vena cava superior con el atrio derecho","El septo interatrial, cerca del seno coronario","La unión de las porciones membranosa y muscular del septo interventricular","El vértice del ventrículo izquierdo"], c:0, e:"El nodo SA está en la unión de la VCS con el atrio derecho, cerca del extremo superior del surco terminal."},
+{tema:"Corazón", p:"¿Cuántas cúspides tiene la válvula mitral (bicúspide), y cómo se diferencia de la tricúspide?", o:["3 cúspides, igual que la tricúspide","2 cúspides (anterior y posterior), a diferencia de las 3 de la tricúspide","4 cúspides","1 cúspide única en forma de embudo"], c:1, e:"Mitral = 2 cúspides (canal AV izquierdo); tricúspide = 3 cúspides (canal AV derecho)."},
+{tema:"Corazón", p:"La arteria coronaria derecha, originada en el seno aórtico derecho, irriga el nodo AV en aproximadamente:", o:["20% de la población","40% de la población","60% de la población","80% de la población"], c:3, e:"La ACD irriga el nodo AV en ~80% de las personas (dominancia derecha) y el nodo SA en ~60%."},
+{tema:"Corazón", p:"El asa cardiaca, que inicia su curvatura hacia el día 23, se completa aproximadamente hacia el día:", o:["Día 20","Día 28","Día 37","Día 45"], c:1, e:"El plegamiento del tubo cardiaco primitivo en asa se completa hacia el día 28 de gestación."},
+{tema:"Corazón", p:"La coalescencia de perforaciones en el septum primum del corazón embrionario da lugar a:", o:["El ostium primum","El ostium secundum","La válvula tricúspide","El seno venoso"], c:1, e:"Estas perforaciones se fusionan formando el ostium secundum, que permite el flujo derecha-izquierda antes del nacimiento."},
+{tema:"Corazón", p:"¿Qué característica distingue al seno aórtico posterior (no coronario)?", o:["Da origen a la arteria coronaria izquierda","Da origen a la arteria coronaria derecha","No origina ninguna arteria coronaria","Da origen al tronco pulmonar"], c:2, e:"Solo los senos aórticos derecho e izquierdo dan origen a las coronarias; el posterior (no coronario) no origina ninguna arteria."},
+{tema:"Corazón", p:"Embriológicamente, el conducto arterioso (de Botal) es un remanente del:", o:["4º arco aórtico izquierdo","6º arco aórtico izquierdo","3er arco aórtico","1er arco aórtico"], c:1, e:"El 6º arco aórtico izquierdo origina la arteria pulmonar izquierda y el conducto arterioso."},
+
+// ---------- MEDIASTINO ----------
+{tema:"Mediastino", p:"El mediastino superior se separa del inferior mediante una línea imaginaria que va desde el ángulo esternal hasta el borde inferior de:", o:["T2","T4","T8","T12"], c:1, e:"Esta línea (ángulo esternal a T4) es el límite clásico entre mediastino superior e inferior."},
+{tema:"Mediastino", p:"El ligamento arterioso, remanente del conducto arterioso fetal, conecta el cayado de la aorta con:", o:["La vena cava superior","El esófago","La arteria pulmonar izquierda","La arteria subclavia izquierda"], c:2, e:"El ligamento arterioso une el cayado aórtico con la arteria pulmonar izquierda."},
+{tema:"Mediastino", p:"A nivel de T5-T6, el conducto torácico cruza la línea media hacia la izquierda pasando:", o:["Ventral al esófago","Dorsal al esófago","A través del hiato aórtico en ese punto","Anterior a la tráquea"], c:1, e:"El conducto torácico asciende a la derecha del esófago y a nivel de T5-T6 cruza dorsal a él hacia la izquierda."},
+
+// ---------- CAJA TORÁCICA ----------
+{tema:"Caja Torácica", p:"Las costillas 8ª, 9ª y 10ª, que se unen al cartílago costal superior en lugar de unirse directamente al esternón, se clasifican como:", o:["Verdaderas (vertebrocostales)","Falsas (vertebrocondrales)","Flotantes (libres)","Atípicas superiores"], c:1, e:"Las costillas falsas (8ª-12ª) incluyen las vertebrocondrales (8ª-10ª, unidas indirectamente) y las flotantes (11ª-12ª, sin unión anterior)."},
+{tema:"Caja Torácica", p:"El diafragma es atravesado por el hiato esofágico aproximadamente a nivel de:", o:["T8","T10","T12","L1"], c:1, e:"Hiato de la vena cava T8, hiato esofágico T10, hiato aórtico T12."},
+{tema:"Caja Torácica", p:"En el surco costal, el paquete neurovascular intercostal se dispone, de superior a inferior, en el orden:", o:["Nervio - Arteria - Vena","Vena - Arteria - Nervio","Arteria - Vena - Nervio","Vena - Nervio - Arteria"], c:1, e:"Regla mnemotécnica VAN: Vena, Arteria, Nervio, de superior a inferior en el surco costal."},
+
+// ---------- EMBRIOLOGÍA DIGESTIVA / RESPIRATORIA TEMPRANA ----------
+{tema:"Embriología Digestiva", p:"El divertículo respiratorio (yema pulmonar) aparece en la pared ventral del intestino anterior durante la:", o:["Semana 2","Semana 4","Semana 8","Semana 12"], c:1, e:"En la semana 4 surge el divertículo respiratorio, precursor de laringe, tráquea, bronquios y pulmones."},
+{tema:"Embriología Digestiva", p:"En la especificación regional del tubo digestivo primitivo, el factor de transcripción SOX2 especifica el desarrollo de:", o:["Duodeno","Esófago y estómago","Intestino delgado","Intestino grueso y recto"], c:1, e:"SOX2 especifica esófago/estómago; PDX1 el duodeno; CDXC el intestino delgado; CDXA el intestino grueso y recto."},
+{tema:"Embriología Digestiva", p:"La rotación fisiológica del intestino medio ocurre, vista de frente, en sentido:", o:["Horario, 90° en total","Antihorario, 270° en total","Horario, 180° en total","No hay rotación, solo elongación"], c:1, e:"La rotación total es de 270° en sentido antihorario alrededor del eje de la arteria mesentérica superior (90° durante la herniación, 180° durante el retorno)."},
+{tema:"Embriología Digestiva", p:"El divertículo de Meckel es una malformación que resulta de la persistencia de:", o:["El conducto onfalomesentérico (vitelino)","El tabique urorrectal","El proceso vaginal del peritoneo","El conducto de Wolff"], c:0, e:"Es el remanente más frecuente del conducto vitelino que normalmente se oblitera."},
+
+// ---------- PERITONEO Y COMPARTIMENTOS ----------
+{tema:"Peritoneo", p:"El foramen omental (epiploico) de Winslow comunica la cavidad peritoneal menor con la mayor y contiene en su interior:", o:["El colédoco, la arteria hepática propia y la vena porta","El bazo y la cola del páncreas","La arteria mesentérica superior y sus ramas","El uréter y la vena ovárica"], c:0, e:"El borde libre del omento menor (límite anterior del foramen) contiene la tríada portal."},
+{tema:"Peritoneo", p:"¿Cuál es la causa más frecuente de ascitis (acumulación de líquido en la cavidad peritoneal)?", o:["Peritonitis bacteriana","Cirrosis hepática (hasta 80% de los casos)","Cáncer de páncreas","Insuficiencia renal"], c:1, e:"La cirrosis hepática con hipertensión portal es la causa más común de ascitis."},
+{tema:"Peritoneo", p:"El compartimento supramesocólico de la cavidad peritoneal contiene principalmente:", o:["Intestino delgado y colon ascendente/descendente","Estómago, hígado y bazo","Recto y vejiga urinaria","Riñones y glándulas suprarrenales"], c:1, e:"El mesocolon transverso separa el compartimento supramesocólico (estómago, hígado, bazo) del inframesocólico (intestino delgado, colon ascendente/descendente)."},
+{tema:"Peritoneo", p:"Las tenias del colon (mesocólica, omental y libre) se originan, en su extremo distal, en la base de:", o:["El ciego","El apéndice vermiforme","El colon sigmoide","El recto"], c:1, e:"Las tres tenias convergen y se originan en la base del apéndice vermiforme."},
+{tema:"Peritoneo", p:"El ángulo esplénico (flexura izquierda) del colon es una zona de riesgo para colitis isquémica porque su irrigación depende casi exclusivamente de:", o:["La arteria marginal de Drummond","El arco de Riolano (anastomosis entre cólica izquierda y cólica media)","La arteria ileocólica","La arteria rectal superior"], c:1, e:"Al no tener arteria propia, el ángulo esplénico depende del arco de Riolano, lo que lo hace vulnerable a isquemia."},
+
+// ---------- HISTOLOGÍA DIGESTIVA ----------
+{tema:"Histología Digestiva", p:"Las glándulas de Brunner, rasgo histológico distintivo del duodeno, se localizan en la ____ y secretan un moco de pH ____ que neutraliza el quimo ácido.", o:["mucosa; ácido (4-5)","submucosa; alcalino (8.1-9.3)","muscular externa; neutro (7.0)","lámina propia; ácido (2-3)"], c:1, e:"Las glándulas de Brunner son submucosas y secretan un moco alcalino (pH 8.1-9.3) que neutraliza el quimo gástrico."},
+{tema:"Histología Digestiva", p:"Las células M del epitelio intestinal, que cubren las placas de Peyer, se caracterizan por presentar en su superficie apical:", o:["Microvellosidades largas típicas de enterocitos","Micropliegues con receptores GP2 que fijan bacterias","Cilios móviles","Gránulos de mucinógeno"], c:1, e:"Las células M tienen micropliegues (no microvellosidades) y expresan GP2, que fija bacterias gramnegativas para transportarlas al GALT."},
+{tema:"Histología Digestiva", p:"Las células centroacinosas, un rasgo histológico distintivo del páncreas exocrino, se localizan:", o:["En los islotes de Langerhans","Dentro de la luz del ácino seroso, como inicio del conducto intercalar","En la submucosa duodenal","En el epitelio del conducto pancreático principal únicamente"], c:1, e:"Las células centroacinosas son células del conducto intercalar que se sitúan dentro del propio ácino, rasgo único del páncreas."},
+{tema:"Histología Digestiva", p:"Los senos de Rokitansky-Aschoff son divertículos profundos de la mucosa característicos de:", o:["El estómago","La vesícula biliar","El intestino grueso","El esófago"], c:1, e:"Son invaginaciones de la mucosa vesicular que pueden atravesar toda la muscular externa de la vesícula biliar."},
+{tema:"Histología Digestiva", p:"Las papilas gustativas caliciformes (circunvaladas) de la lengua, ubicadas delante del surco terminal en V, reciben la secreción de:", o:["Las glándulas de von Ebner (serosas)","Las glándulas de Brunner","Las glándulas salivales sublinguales","Las glándulas de Bowman"], c:0, e:"Las glándulas de von Ebner (serosas) desembocan en el fondo del surco que rodea cada papila caliciforme."},
+{tema:"Histología Digestiva", p:"Las células parietales (delomorfas) de las glándulas gástricas fúndicas producen:", o:["Pepsinógeno y lipasa","Ácido clorhídrico (HCl) y factor intrínseco","Moco y bicarbonato","Gastrina y somatostatina"], c:1, e:"Las células parietales producen HCl (vía bomba H+/K+ ATPasa) y factor intrínseco, necesario para absorber vitamina B12."},
+
+// ---------- APARATO RESPIRATORIO ----------
+{tema:"Aparato Respiratorio", p:"Embriológicamente, el epitelio de revestimiento de las vías respiratorias (laringe, tráquea, bronquios, pulmones) deriva de:", o:["El mesodermo esplácnico","El endodermo","El ectodermo","La cresta neural"], c:1, e:"El epitelio es endodérmico; el cartílago, músculo y tejido conjuntivo derivan del mesodermo esplácnico circundante."},
+{tema:"Aparato Respiratorio", p:"¿Cuál es el orden correcto de las 4 etapas del desarrollo pulmonar?", o:["Canalicular → Pseudoglandular → Sacos terminales → Alveolar","Pseudoglandular → Canalicular → Sacos terminales → Alveolar","Alveolar → Sacos terminales → Canalicular → Pseudoglandular","Pseudoglandular → Sacos terminales → Canalicular → Alveolar"], c:1, e:"Pseudoglandular (5-16 sem) → Canalicular (16-26 sem) → Sacos terminales (26-nacimiento) → Alveolar (8 meses-niñez)."},
+{tema:"Aparato Respiratorio", p:"Los neumocitos tipo II, que aparecen al final del sexto mes de gestación, tienen como función principal:", o:["Formar la barrera de intercambio gaseoso alveolo-capilar","Producir surfactante pulmonar","Fagocitar partículas inhaladas","Secretar moco bronquial"], c:1, e:"El neumocito tipo I forma la barrera de intercambio; el tipo II produce surfactante, esencial para evitar el colapso alveolar."},
+{tema:"Aparato Respiratorio", p:"Las placas de cartílago bronquial desaparecen cuando el diámetro de la vía aérea alcanza aproximadamente:", o:["5 mm","1 mm","10 mm","0.1 mm"], c:1, e:"A partir de ~1 mm de diámetro, sin cartílago ni glándulas, la vía aérea se denomina bronquíolo."},
+{tema:"Aparato Respiratorio", p:"La bifurcación traqueal (carina) se localiza a nivel vertebral de:", o:["C6-C7","T1-T2","T5-T6","L1-L2"], c:2, e:"La tráquea se bifurca en los bronquios principales aproximadamente a nivel de T5-T6 (variable)."},
+{tema:"Aparato Respiratorio", p:"El seno paranasal maxilar desemboca en la cavidad nasal a través de:", o:["El receso esfenoetmoidal (meato superior)","El hiato semilunar (meato medio)","El conducto nasolagrimal (meato inferior)","La bula etmoidal exclusivamente"], c:1, e:"El seno maxilar drena en el hiato semilunar del meato medio, al igual que el frontal (vía infundíbulo) y las celdillas etmoidales anteriores/medias."},
+
+// ---------- SISTEMA TEGUMENTARIO ----------
+{tema:"Sistema Tegumentario", p:"¿Cuál es la capa más gruesa de la epidermis?", o:["Estrato basal","Estrato espinoso","Estrato granuloso","Estrato córneo"], c:1, e:"El estrato espinoso es la capa más gruesa de la epidermis, con queratinocitos unidos por desmosomas."},
+{tema:"Sistema Tegumentario", p:"Las glándulas sudoríparas apocrinas se localizan únicamente en:", o:["Toda la superficie corporal excepto palmas y plantas","Axilas, región anogenital, conducto auditivo externo, aréolas y párpados","Palmas y plantas exclusivamente","Cuero cabelludo y cara"], c:1, e:"Las apocrinas tienen distribución restringida (axilas, anogenital, CAE -ceruminosas-, aréolas, párpados -de Moll-); las ecrinas cubren casi toda la piel."},
+{tema:"Sistema Tegumentario", p:"Los melanocitos de la epidermis derivan embriológicamente de:", o:["El mesodermo","El endodermo","La cresta neural","La médula ósea"], c:2, e:"Los precursores de los melanocitos migran desde la cresta neural; las células de Langerhans, en cambio, derivan de la médula ósea."},
+
+// ---------- VASCULARIZACIÓN ----------
+{tema:"Vascularización", p:"La arteria ilíaca interna (hipogástrica) se divide típicamente en dos troncos:", o:["Superior e inferior","Anterior (visceral) y posterior (parietal)","Medial y lateral","Craneal y caudal"], c:1, e:"El tronco anterior da ramas viscerales y algunas parietales terminales; el posterior da ramas parietales (iliolumbar, sacra lateral, glútea superior)."},
+{tema:"Vascularización", p:"El tronco celíaco se divide en tres ramas principales:", o:["Mesentérica superior, mesentérica inferior y esplénica","Gástrica izquierda, esplénica y hepática común","Renal, suprarrenal y gonadal","Hepática propia, cística y gastroduodenal"], c:1, e:"El tronco celíaco irriga el intestino anterior mediante sus 3 ramas: gástrica izquierda, esplénica y hepática común."},
+{tema:"Vascularización", p:"La vena porta hepática se forma por la unión de:", o:["La vena mesentérica inferior y la vena esplénica","La vena mesentérica superior y la vena esplénica","Las dos venas renales","La vena cava inferior y la vena hepática"], c:1, e:"Se forma detrás del cuello del páncreas por la unión de la mesentérica superior y la esplénica (que suele recibir antes a la mesentérica inferior)."},
+{tema:"Vascularización", p:"El 4º arco aórtico izquierdo da origen embriológicamente a:", o:["La arteria pulmonar izquierda","El cayado (arco) de la aorta","La arteria subclavia izquierda","La arteria carótida externa"], c:1, e:"El 4º arco izquierdo forma el cayado aórtico; el derecho forma el segmento proximal de la subclavia derecha."},
+
+// ---------- EMBRIOLOGÍA BRANQUIOMÉRICA ----------
+{tema:"Embriología Branquiomérica", p:"El primer arco faríngeo (mandibular) está inervado por el par craneal:", o:["VII (facial)","V (trigémino)","IX (glosofaríngeo)","X (vago)"], c:1, e:"Arco 1 → V (trigémino); arco 2 → VII (facial); arco 3 → IX (glosofaríngeo); arcos 4 y 6 → X (vago)."},
+{tema:"Embriología Branquiomérica", p:"La tercera bolsa faríngea da origen a:", o:["La amígdala palatina","La glándula paratiroides inferior y el timo","El conducto auditivo externo","La glándula paratiroides superior"], c:1, e:"Bolsa I → CAE/cavidad timpánica; bolsa II → amígdala palatina; bolsa III → paratiroides inferior + timo; bolsa IV → paratiroides superior + cuerpo ultimobranquial."},
+
+// ---------- PREGUNTAS ADICIONALES (ampliación a 80) ----------
+{tema:"Reproductor Femenino", p:"¿Con cuál fórnix vaginal se relaciona el fondo de saco rectouterino (de Douglas), el más profundo de los fórnix?", o:["Fórnix anterior","Fórnix posterior","Fórnix lateral derecho","Fórnix lateral izquierdo"], c:1, e:"El fórnix posterior, el más profundo, se relaciona con el fondo de saco rectouterino (de Douglas)."},
+{tema:"Reproductor Masculino", p:"Las vesículas seminales, que producen gran parte del líquido seminal, se localizan en:", o:["La cara posterior de la vejiga urinaria","El interior de la próstata","El cordón espermático","La cara anterior del recto, sin relación con la vejiga"], c:0, e:"Las vesículas seminales están en la cara posterior de la vejiga, formadas por músculo liso y tejido fibroso."},
+{tema:"Reproductor Masculino", p:"El ciclo del epitelio seminífero dura 16 días; se requieren aproximadamente 4.6 ciclos para completar la espermatogénesis, lo que equivale a:", o:["24 días","54 días","74 días","120 días"], c:2, e:"4.6 ciclos × 16 días ≈ 74 días; sumando el tránsito epididimario (~12 días) el total es de ~86 días."},
+{tema:"Sistema Linfático", p:"El bazo se compone de pulpa blanca (tejido linfático) y pulpa roja (rica en eritrocitos). ¿Cuál es una de sus funciones principales?", o:["Producir bilis","Filtrar el torrente sanguíneo y destruir elementos sanguíneos defectuosos","Producir orina","Sintetizar surfactante"], c:1, e:"El bazo filtra la sangre, retiene antígenos, produce anticuerpos y destruye células sanguíneas defectuosas/envejecidas."},
+{tema:"Sistema Linfático", p:"Los macrófagos hepáticos especializados, parte del sistema fagocítico mononuclear, reciben el nombre de:", o:["Microglía","Células de Kupffer","Histiocitos","Células de Langerhans"], c:1, e:"Según su ubicación: microglía (SNC), Kupffer (hígado), histiocito (conectivo), Langerhans (piel), mesangiales (riñón), alveolares (pulmón)."},
+{tema:"Corazón", p:"Al obliterarse la vena cardinal común izquierda hacia la 10ª semana de gestación, quedan como remanentes:", o:["La vena oblicua de la aurícula izquierda y el seno coronario","Una vena cava superior izquierda permanente","El conducto arterioso","La vena porta hepática"], c:0, e:"Estos remanentes derivan de la porción proximal de la vena cardinal común izquierda obliterada."},
+{tema:"Embriología Digestiva", p:"La hernia umbilical fisiológica, en la que las asas intestinales se desplazan temporalmente hacia el cordón umbilical, ocurre durante la:", o:["4ª semana","6ª semana","10ª semana","20ª semana"], c:1, e:"En la 6ª semana el crecimiento rápido del hígado e intestino provoca la herniación fisiológica; el retorno ocurre en la 10ª semana."},
+{tema:"Embriología Digestiva", p:"La estenosis hipertrófica del píloro es una malformación que afecta a:", o:["El esófago","El estómago, en su región pilórica","El duodeno","El colon sigmoide"], c:1, e:"Es un engrosamiento del músculo pilórico que obstruye el vaciamiento gástrico en lactantes."},
+{tema:"Histología Digestiva", p:"Las placas de Peyer, nódulos linfáticos grandes del tubo digestivo, se localizan característicamente en:", o:["El borde mesentérico del yeyuno","El borde antimesentérico del íleon","La submucosa del esófago","El fondo gástrico"], c:1, e:"Son conglomerados linfonodulares visibles macroscópicamente en el borde antimesentérico del íleon."},
+{tema:"Aparato Respiratorio", p:"Las células de Clara (células club), presentes en los bronquiolos terminales, tienen como función:", o:["Producir moco en grandes cantidades","Secretar agente tensioactivo y la proteína CC16, protectora de la vía aérea","Formar cartílago de sostén","Producir pepsinógeno"], c:1, e:"Las células de Clara aumentan distalmente reemplazando a las ciliadas y protegen el epitelio bronquiolar."},
+{tema:"Aparato Respiratorio", p:"La amígdala (tonsila) palatina se aloja en:", o:["El receso esfenoetmoidal","La fosa tonsilar de la orofaringe, entre los arcos palatogloso y palatofaríngeo","El meato inferior","El seno piriforme de la laringofaringe"], c:1, e:"La fosa tonsilar, entre los pilares (arcos) anterior y posterior, aloja la amígdala palatina."},
+{tema:"Peritoneo", p:"¿Cuál de los siguientes órganos es retroperitoneal (no intraperitoneal)?", o:["Estómago","Intestino delgado (yeyuno-íleon)","Páncreas","Colon transverso"], c:2, e:"El páncreas es un órgano retroperitoneal; estómago, yeyuno-íleon y colon transverso son intraperitoneales (poseen meso)."},
+{tema:"Vascularización", p:"De las tres anastomosis portosistémicas de mayor relevancia clínica, ¿cuál explica la aparición de varices esofágicas en la hipertensión portal?", o:["Anastomosis hemorroidal (rectal superior con rectal media/inferior)","Anastomosis esofágica (vena gástrica izquierda con el sistema ácigos)","Anastomosis umbilical (venas paraumbilicales)","Anastomosis esplenorrenal"], c:1, e:"La vena gástrica izquierda (porta) se anastomosa con ramas del sistema ácigos (cava) alrededor del cardias, generando varices esofágicas en hipertensión portal."},
+{tema:"Caja Torácica", p:"¿Qué costillas se articulan con una sola vértebra (excepción a la regla general de dos vértebras) y por tanto carecen de articulación costotransversa completa en el caso de la XI y XII?", o:["3ª a 9ª","I, X, XI y XII","Todas las costillas verdaderas (1ª-7ª)","II a VII"], c:1, e:"Las costillas I, X, XI y XII se articulan con una sola vértebra; además XI y XII carecen de tubérculo, por lo que no forman articulación costotransversa."},
+{tema:"Vascularización", p:"La formación de nuevos vasos sanguíneos a partir de vasos preexistentes mediante brotación (sprouting) se denomina:", o:["Vasculogénesis","Angiogénesis","Hematopoyesis","Organogénesis"], c:1, e:"Vasculogénesis = formación de novo por diferenciación de angioblastos (ej. aortas dorsales); angiogénesis = brotes de vasos ya existentes."},
+];
+
+// ---------------- APP LOGIC ----------------
+let selectedTemas = new Set();
+let sessionQuestions = [];
+let currentIndex = 0;
+let userAnswers = []; // {qIndex, chosen, correct}
+let modo = "estudio";
+let lockAnswer = false;
+
+const allTemas = [...new Set(QUESTIONS.map(q=>q.tema))];
+
+function initSetup(){
+  allTemas.forEach(t=>selectedTemas.add(t));
+  const container = document.getElementById('temaChips');
+  container.innerHTML = '';
+  allTemas.forEach(t=>{
+    const n = QUESTIONS.filter(q=>q.tema===t).length;
+    const chip = document.createElement('div');
+    chip.className = 'tema-chip active';
+    chip.textContent = t + ' (' + n + ')';
+    chip.dataset.tema = t;
+    chip.onclick = ()=>{
+      if(selectedTemas.has(t)){selectedTemas.delete(t); chip.classList.remove('active');}
+      else{selectedTemas.add(t); chip.classList.add('active');}
+      updateCountInfo();
+    };
+    container.appendChild(chip);
+  });
+  updateCountInfo();
+}
+
+function selectAllTemas(all){
+  selectedTemas = new Set(all ? allTemas : []);
+  document.querySelectorAll('.tema-chip').forEach(chip=>{
+    chip.classList.toggle('active', selectedTemas.has(chip.dataset.tema));
+  });
+  updateCountInfo();
+}
+
+function updateCountInfo(){
+  const n = QUESTIONS.filter(q=>selectedTemas.has(q.tema)).length;
+  document.getElementById('countInfo').textContent = n + ' pregunta(s) seleccionadas';
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function startQuiz(){
+  let pool = QUESTIONS.filter(q=>selectedTemas.has(q.tema));
+  if(pool.length===0){ alert('Selecciona al menos un tema.'); return; }
+  modo = document.getElementById('modo').value;
+  const orden = document.getElementById('orden').value;
+  pool = pool.map((q,i)=>({...q, origIndex:i}));
+  if(orden==='aleatorio') pool = shuffle(pool);
+  sessionQuestions = pool.map(q=>({...q, opts: q.o.map((txt,i)=>({txt,i})).map(x=>x)}));
+  // shuffle options per question but keep track of correct
+  sessionQuestions = sessionQuestions.map(q=>{
+    const optsWithIndex = q.o.map((txt,i)=>({txt, isCorrect:i===q.c}));
+    const shuffledOpts = shuffle(optsWithIndex);
+    return {...q, shuffledOpts};
+  });
+  currentIndex = 0;
+  userAnswers = [];
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('resultsScreen').style.display = 'none';
+  document.getElementById('quizScreen').style.display = 'block';
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const q = sessionQuestions[currentIndex];
+  document.getElementById('qCounter').textContent = `Pregunta ${currentIndex+1} / ${sessionQuestions.length}`;
+  document.getElementById('scoreLive').textContent = `Aciertos: ${userAnswers.filter(a=>a.correct).length}`;
+  document.getElementById('progressBar').style.width = ((currentIndex)/sessionQuestions.length*100)+'%';
+  document.getElementById('temaTag').textContent = q.tema;
+  document.getElementById('preguntaTxt').textContent = q.p;
+  const opcionesDiv = document.getElementById('opciones');
+  opcionesDiv.innerHTML = '';
+  lockAnswer = false;
+  document.getElementById('nextBtn').disabled = true;
+  document.getElementById('explicacion').classList.remove('show');
+  document.getElementById('explicacion').textContent = '';
+
+  q.shuffledOpts.forEach(opt=>{
+    const btn = document.createElement('button');
+    btn.className = 'opcion';
+    btn.textContent = opt.txt;
+    btn.onclick = ()=>selectOption(btn, opt, q);
+    opcionesDiv.appendChild(btn);
+  });
+}
+
+function selectOption(btn, opt, q){
+  if(lockAnswer) return;
+  lockAnswer = true;
+  const correct = opt.isCorrect;
+  userAnswers.push({tema:q.tema, pregunta:q.p, chosen:opt.txt, correct, correctText:q.o[q.c], explicacion:q.e});
+
+  const allBtns = document.querySelectorAll('#opciones .opcion');
+  allBtns.forEach(b=>b.classList.add('disabled'));
+
+  if(modo==='estudio'){
+    allBtns.forEach(b=>{
+      if(b.textContent === q.o[q.c]) b.classList.add('correct');
+    });
+    if(!correct) btn.classList.add('incorrect');
+    const expDiv = document.getElementById('explicacion');
+    expDiv.textContent = (correct? '✅ ¡Correcto! ' : '❌ Incorrecto. Respuesta correcta: "'+q.o[q.c]+'". ') + q.e;
+    expDiv.classList.add('show');
+  } else {
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.background = 'rgba(63,169,245,.18)';
+  }
+  document.getElementById('scoreLive').textContent = `Aciertos: ${userAnswers.filter(a=>a.correct).length}`;
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('nextBtn').textContent = (currentIndex===sessionQuestions.length-1) ? 'Ver resultados →' : 'Siguiente →';
+}
+
+function nextQuestion(){
+  currentIndex++;
+  if(currentIndex >= sessionQuestions.length){
+    showResults();
+  } else {
+    renderQuestion();
+  }
+}
+
+function quitQuiz(){
+  if(confirm('¿Salir del examen? Se perderá el progreso actual.')){
+    goToSetup();
+  }
+}
+
+function goToSetup(){
+  document.getElementById('quizScreen').style.display='none';
+  document.getElementById('resultsScreen').style.display='none';
+  document.getElementById('setup').style.display='block';
+}
+
+function showResults(){
+  document.getElementById('progressBar').style.width='100%';
+  document.getElementById('quizScreen').style.display='none';
+  document.getElementById('resultsScreen').style.display='block';
+
+  const total = userAnswers.length;
+  const correctCount = userAnswers.filter(a=>a.correct).length;
+  const pct = Math.round((correctCount/total)*100);
+  const grade10 = (correctCount/total*10).toFixed(1);
+  const passed = pct >= 80;
+
+  document.getElementById('scorePct').textContent = pct+'%';
+  document.getElementById('scoreFrac').textContent = correctCount+'/'+total;
+  const circle = document.getElementById('scoreCircle');
+  circle.className = 'score-circle ' + (passed?'pass':'fail');
+  const verdict = document.getElementById('verdictTxt');
+  verdict.className = 'verdict ' + (passed?'pass':'fail');
+  verdict.textContent = passed ? '¡Aprobado! 🎉' : 'Aún no alcanzas el 8 — sigue repasando';
+  document.getElementById('gradeTxt').textContent = `Nota equivalente: ${grade10} / 10 (necesitas 8.0 para pasar)`;
+
+  // breakdown by tema
+  const temaStats = {};
+  userAnswers.forEach(a=>{
+    if(!temaStats[a.tema]) temaStats[a.tema] = {c:0,t:0};
+    temaStats[a.tema].t++;
+    if(a.correct) temaStats[a.tema].c++;
+  });
+  const bd = document.getElementById('temaBreakdown');
+  bd.innerHTML = '';
+  Object.keys(temaStats).sort().forEach(t=>{
+    const s = temaStats[t];
+    const p = Math.round(s.c/s.t*100);
+    const label = document.createElement('div');
+    label.innerHTML = `${t}<div class="bar-bg"><div class="bar-fill" style="width:${p}%"></div></div>`;
+    const val = document.createElement('div');
+    val.textContent = `${s.c}/${s.t}`;
+    bd.appendChild(label);
+    bd.appendChild(val);
+  });
+
+  // review list
+  const reviewList = document.getElementById('reviewList');
+  reviewList.innerHTML = '';
+  userAnswers.forEach((a,i)=>{
+    const div = document.createElement('div');
+    div.className = 'review-item';
+    div.innerHTML = `
+      <div class="q">${i+1}. [${a.tema}] ${a.pregunta}</div>
+      ${a.correct
+        ? `<div class="a-ok">✔ Tu respuesta: ${a.chosen}</div>`
+        : `<div class="a-user">✘ Tu respuesta: ${a.chosen}</div><div class="a-correct">✔ Correcta: ${a.correctText}</div>`}
+      <div class="exp">${a.explicacion}</div>
+    `;
+    reviewList.appendChild(div);
+  });
+
+  window._lastSessionTemas = new Set(sessionQuestions.map(q=>q.tema));
+  window._lastFailedTemas = userAnswers.filter(a=>!a.correct).map(a=>a.pregunta);
+}
+
+function restartSame(){
+  const temasUsed = new Set(sessionQuestions.map(q=>q.tema));
+  selectedTemas = temasUsed;
+  startQuiz();
+}
+
+function reviewFailedOnly(){
+  const failedTexts = new Set(userAnswers.filter(a=>!a.correct).map(a=>a.pregunta));
+  if(failedTexts.size===0){ alert('¡No fallaste ninguna! 🎉'); return; }
+  let pool = QUESTIONS.filter(q=>failedTexts.has(q.p));
+  pool = pool.map(q=>{
+    const optsWithIndex = q.o.map((txt,i)=>({txt, isCorrect:i===q.c}));
+    return {...q, shuffledOpts: shuffle(optsWithIndex)};
+  });
+  sessionQuestions = shuffle(pool);
+  currentIndex = 0;
+  userAnswers = [];
+  document.getElementById('resultsScreen').style.display='none';
+  document.getElementById('quizScreen').style.display='block';
+  renderQuestion();
+}
+
+initSetup();
+</script>
+</body>
+</html>
